@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poker/screens/create_room_page.dart';
+import 'package:poker/screens/game_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -136,7 +137,12 @@ class HomePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => GamePage()),
+                      );
+                    },
                     child: Text(
                       'Entrar!',
                       style: TextStyle(
