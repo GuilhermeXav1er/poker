@@ -17,8 +17,8 @@ class _GamePageState extends State<GamePage> {
           // Mesa de poker oval central
           Center(
             child: Container(
-              width: 800,
-              height: 400,
+              width: 750,
+              height: 300,
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   center: Alignment.center,
@@ -36,7 +36,7 @@ class _GamePageState extends State<GamePage> {
           
           // Informações do pote atual (topo esquerdo)
           Positioned(
-            top: 60,
+            top: 10,
             left: 120,
             child: Column(
               children: [
@@ -44,7 +44,7 @@ class _GamePageState extends State<GamePage> {
                   'Pote atual',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 20,
                     fontFamily: 'Gotham',
                     fontWeight: FontWeight.bold,
                   ),
@@ -53,7 +53,7 @@ class _GamePageState extends State<GamePage> {
                   '\$ 600',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 24,
                     fontFamily: 'Gotham',
                     fontWeight: FontWeight.bold,
                   ),
@@ -64,7 +64,7 @@ class _GamePageState extends State<GamePage> {
           
           // Informações do seu pote (topo direito)
           Positioned(
-            top: 60,
+            top: 10,
             right: 120,
             child: Column(
               children: [
@@ -72,7 +72,7 @@ class _GamePageState extends State<GamePage> {
                   'Seu pote',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 20,
                     fontFamily: 'Gotham',
                     fontWeight: FontWeight.bold,
                   ),
@@ -81,7 +81,7 @@ class _GamePageState extends State<GamePage> {
                   '\$ 450',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 24,
                     fontFamily: 'Gotham',
                     fontWeight: FontWeight.bold,
                   ),
@@ -92,14 +92,14 @@ class _GamePageState extends State<GamePage> {
           
           // Jogador Xavier (topo esquerdo da mesa)
           Positioned(
-            top: 150,
+            top: 80,
             left: 80,
             child: _buildPlayer('Xavier', '\$ 500'),
           ),
           
           // Cartas do Xavier
           Positioned(
-            top: 180,
+            top: 70,
             left: 200,
             child: Row(
               children: [
@@ -112,29 +112,29 @@ class _GamePageState extends State<GamePage> {
           
           // Aposta do Xavier
           Positioned(
-            top: 250,
+            top: 150,
             left: 220,
             child: _buildBet('\$ 10'),
           ),
           
           // Botão dealer (perto do Xavier)
-          Positioned(
+         /*  Positioned(
             top: 260,
             left: 280,
             child: _buildDealerButton(),
           ),
-          
+           */
           // Jogador Enzo (topo direito da mesa)
           Positioned(
-            top: 150,
+            top: 80,
             right: 80,
             child: _buildPlayer('Enzo', '\$ 350'),
           ),
           
           // Cartas do Enzo
           Positioned(
-            top: 180,
-            right: 200,
+            top: 70,
+            right: 150,
             child: Row(
               children: [
                 _buildCard(isBack: true),
@@ -147,18 +147,17 @@ class _GamePageState extends State<GamePage> {
           // Jogador Romanhole (esquerda da mesa)
           Positioned(
             left: 20,
-            top: 280,
-            child: _buildPlayer('Romanhole', '\$ 500'),
+            top: 180,
+            child: _buildPlayer('Roman', '\$ 500'),
           ),
           
           // Cartas do Romanhole (chip)
           Positioned(
             left: 120,
-            top: 300,
+            top: 160,
             child: Column(
               children: [
                 _buildCard(isBack: true, isChip: true),
-                SizedBox(height: 5),
                 _buildCard(isBack: true, isChip: true),
               ],
             ),
@@ -166,26 +165,25 @@ class _GamePageState extends State<GamePage> {
           
           // Aposta do Romanhole
           Positioned(
-            left: 170,
-            top: 330,
+            left: 185,
+            top: 180,
             child: _buildBet('\$ 5'),
           ),
           
           // Jogador Bruno (direita da mesa)
           Positioned(
             right: 20,
-            top: 280,
+            top: 180,
             child: _buildPlayer('Bruno', '\$ 150'),
           ),
           
           // Cartas do Bruno (chip)
           Positioned(
             right: 120,
-            top: 300,
+            top: 160,
             child: Column(
               children: [
                 _buildCard(isBack: true, isChip: true),
-                SizedBox(height: 5),
                 _buildCard(isBack: true, isChip: true),
               ],
             ),
@@ -193,8 +191,8 @@ class _GamePageState extends State<GamePage> {
           
           // Cartas comunitárias (centro da mesa)
           Positioned(
-            top: 280,
-            left: 280,
+            top: 160,
+            left: 320,
             child: Row(
               children: [
                 _buildCard(isBack: true),
@@ -212,8 +210,8 @@ class _GamePageState extends State<GamePage> {
           
           // Botão BTN (centro da mesa)
           Positioned(
-            top: 360,
-            left: 380,
+            top: 260,
+            left: 310,
             child: Container(
               width: 40,
               height: 40,
@@ -236,31 +234,45 @@ class _GamePageState extends State<GamePage> {
           
           // Suas cartas (parte inferior)
           Positioned(
-            bottom: 180,
-            left: MediaQuery.of(context).size.width / 2 - 120,
+            bottom: 10,
+            left: MediaQuery.of(context).size.width / 2 - 100,
             child: Row(
               children: [
-                _buildCard(suit: '♠', value: 'J', color: Colors.black),
+                _buildCard(suit: '♠', value: 'J', color: Colors.black, isMyCard: true),
                 SizedBox(width: 10),
-                _buildCard(suit: '♦', value: 'A', color: Colors.red),
+                _buildCard(suit: '♦', value: 'A', color: Colors.red, isMyCard: true),
               ],
             ),
           ),
           
           // Botões de ação (parte inferior)
           Positioned(
-            bottom: 50,
+            bottom: 30,
             left: 0,
             right: 0,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildActionButton('Desistir'),
-                _buildActionButton('Passar'),
-                _buildActionButton('Apostar'),
-                _buildActionButton('Pagar'),
-                _buildActionButton('Aumentar'),
-                _buildActionButton('All-In'),
+                // Grupo de botões da esquerda
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    _buildActionButton('Desistir'),
+                    _buildActionButton('Passar'),
+                    _buildActionButton('Apostar'),
+                  ],
+                  
+                ),
+                Spacer(),
+                // Grupo de botões da direita
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _buildActionButton('Pagar'),
+                    _buildActionButton('Aumentar'),
+                    _buildActionButton('All-In'),
+                  ],
+                ),
               ],
             ),
           ),
@@ -293,25 +305,10 @@ class _GamePageState extends State<GamePage> {
     );
   }
   
-  Widget _buildCard({bool isBack = false, String? suit, String? value, Color? color, bool isChip = false}) {
-    if (isChip) {
-      return Container(
-        width: 50,
-        height: 35,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white, width: 2),
-          image: DecorationImage(
-            image: AssetImage('assets/chips.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
-      );
-    }
-    
-    return Container(
-      width: 60,
-      height: 85,
+  Widget _buildCard({bool isBack = false, String? suit, String? value, Color? color, bool isChip = false, bool isMyCard = false}) {
+    Widget card = Container(
+      width: isMyCard ? 100 : 50,
+      height: isMyCard ? 140 : 70,
       decoration: BoxDecoration(
         color: isBack ? Colors.red.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -320,8 +317,8 @@ class _GamePageState extends State<GamePage> {
       child: isBack 
         ? Center(
             child: Container(
-              width: 40,
-              height: 60,
+              width: isMyCard ? 56 : 40,
+              height: isMyCard ? 84 : 60,
               decoration: BoxDecoration(
                 color: Colors.red.shade900,
                 borderRadius: BorderRadius.circular(20),
@@ -332,14 +329,14 @@ class _GamePageState extends State<GamePage> {
         : Column(
             children: [
               Padding(
-                padding: EdgeInsets.all(4),
+                padding: EdgeInsets.all(isMyCard ? 6 : 4),
                 child: Align(
                   alignment: Alignment.topLeft,
                   child: Text(
                     value!,
                     style: TextStyle(
                       color: color,
-                      fontSize: 20,
+                      fontSize: isMyCard ? 28 : 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -351,13 +348,13 @@ class _GamePageState extends State<GamePage> {
                     suit!,
                     style: TextStyle(
                       color: color,
-                      fontSize: 30,
+                      fontSize: isMyCard ? 42 : 30,
                     ),
                   ),
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(4),
+                padding: EdgeInsets.all(isMyCard ? 6 : 4),
                 child: Align(
                   alignment: Alignment.bottomRight,
                   child: Transform.rotate(
@@ -366,7 +363,7 @@ class _GamePageState extends State<GamePage> {
                       value,
                       style: TextStyle(
                         color: color,
-                        fontSize: 20,
+                        fontSize: isMyCard ? 28 : 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -376,6 +373,15 @@ class _GamePageState extends State<GamePage> {
             ],
           ),
     );
+
+    if (isChip) {
+      return Transform.rotate(
+        angle: 1.5708, // 90 degrees in radians
+        child: card,
+      );
+    }
+
+    return card;
   }
   
   Widget _buildBet(String amount) {
@@ -398,7 +404,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
   
-  Widget _buildDealerButton() {
+  /* Widget _buildDealerButton() {
     return Container(
       width: 30,
       height: 30,
@@ -418,11 +424,11 @@ class _GamePageState extends State<GamePage> {
         ),
       ),
     );
-  }
+  } */
     Widget _buildActionButton(String text) {
     return SizedBox(
       width: 120,
-      height: 60,
+      height: 70,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.grey.shade300,
