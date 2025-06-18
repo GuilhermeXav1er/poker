@@ -1,7 +1,75 @@
 import 'package:flutter/material.dart';
+import '../services/room_service.dart';
 
-class CreateRoomPage extends StatelessWidget {
+class CreateRoomPage extends StatefulWidget {
   const CreateRoomPage({super.key});
+
+  @override
+  State<CreateRoomPage> createState() => _CreateRoomPageState();
+}
+
+class _CreateRoomPageState extends State<CreateRoomPage> {
+  final TextEditingController _creatorNameController = TextEditingController();
+  final TextEditingController _maxPlayersController = TextEditingController();
+  final RoomService _roomService = RoomService();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _creatorNameController.dispose();
+    _maxPlayersController.dispose();
+    _roomService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _createRoom() async {
+    if (_creatorNameController.text.trim().isEmpty) {
+      print('Error: Creator name cannot be empty');
+      return;
+    }
+
+    int maxPlayers = 6; // Default to 6 players
+    if (_maxPlayersController.text.trim().isNotEmpty) {
+      try {
+        maxPlayers = int.parse(_maxPlayersController.text.trim());
+        if (maxPlayers < 2 || maxPlayers > 10) {
+          print('Error: Max players must be between 2 and 10');
+          return;
+        }
+      } catch (e) {
+        print('Error: Max players must be a valid number');
+        return;
+      }
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('Creating room with creator: ${_creatorNameController.text}');
+      
+      final response = await _roomService.createRoom(
+        creatorName: _creatorNameController.text.trim(),
+        maxPlayers: maxPlayers,
+      );
+
+      print('Room created successfully!');
+      print('Room ID: ${response.roomId}');
+      print('Player ID: ${response.playerId}');
+      
+      // Get WebSocket URL for real-time communication
+      final wsUrl = _roomService.getWebSocketUrl(response.roomId);
+      print('WebSocket URL: $wsUrl');
+      
+    } catch (e) {
+      print('Error creating room: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +126,7 @@ class CreateRoomPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Quantidade inicial de fichas',
+                          'Nome do criador',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.black,
@@ -67,12 +135,15 @@ class CreateRoomPage extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         TextField(
+                          controller: _creatorNameController,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.black,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
+                            hintText: 'Digite seu nome',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
                           ),
                           style: TextStyle(color: Colors.white),
                         ),
@@ -87,7 +158,7 @@ class CreateRoomPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Nome da sala',
+                          'Quantidade máxima de jogadores',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.black,
@@ -96,12 +167,16 @@ class CreateRoomPage extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         TextField(
+                          controller: _maxPlayersController,
+                          keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.black,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
+                            hintText: '2-10 (padrão: 6)',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
                           ),
                           style: TextStyle(color: Colors.white),
                         ),
@@ -118,15 +193,24 @@ class CreateRoomPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () {},
-                    child: Text(
-                      'Criar!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontFamily: 'Gotham',
-                      ),
-                    ),
+                    onPressed: _isLoading ? null : _createRoom,
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Criar!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontFamily: 'Gotham',
+                            ),
+                          ),
                   ),
                 ],
               ),
