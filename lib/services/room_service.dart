@@ -26,14 +26,9 @@ class RoomService {
       throw Exception('Max players must be between 2 and 10');
     }
 
-    /* final request = CreateRoomRequest(
+    final request = CreateRoomRequest(
       creatorName: creatorName.trim(),
       maxPlayers: maxPlayers,
-    ); */
-
-    final request = CreateRoomRequest(
-      creatorName: 'enze',
-      maxPlayers: 6,
     );
 
     print("teste");

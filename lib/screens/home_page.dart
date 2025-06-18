@@ -1,9 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:poker/screens/create_room_page.dart';
 import 'package:poker/screens/game_page.dart';
+import '../services/room_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final TextEditingController _roomCodeController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final RoomService _roomService = RoomService();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _roomCodeController.dispose();
+    _usernameController.dispose();
+    _roomService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _joinRoom() async {
+    if (_roomCodeController.text.trim().isEmpty) {
+      print('Error: Room code cannot be empty');
+      return;
+    }
+
+    if (_usernameController.text.trim().isEmpty) {
+      print('Error: Username cannot be empty');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('Joining room with code: ${_roomCodeController.text}');
+      print('Username: ${_usernameController.text}');
+      
+      final response = await _roomService.joinRoom(
+        roomId: _roomCodeController.text.trim(),
+        playerName: _usernameController.text.trim(),
+      );
+
+      print('Joined room successfully!');
+      print('Success: ${response.success}');
+      print('Message: ${response.message}');
+      print('Player ID: ${response.playerId}');
+      
+      if (response.success) {
+        // Navigate to game page with room information
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GamePage(
+              roomId: _roomCodeController.text.trim(),
+              playerId: response.playerId ?? '',
+              playerName: _usernameController.text.trim(),
+            ),
+          ),
+        );
+      } else {
+        print('Failed to join room: ${response.message}');
+        // You could show a snackbar or dialog here to inform the user
+      }
+      
+    } catch (e) {
+      print('Error joining room: $e');
+      // You could show a snackbar or dialog here to inform the user
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,12 +161,15 @@ class HomePage extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         TextField(
+                          controller: _roomCodeController,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.black,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
+                            hintText: 'Digite o código da sala',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
                           ),
                           style: TextStyle(color: Colors.white),
                         ),
@@ -115,12 +193,15 @@ class HomePage extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         TextField(
+                          controller: _usernameController,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.black,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
+                            hintText: 'Digite seu nome',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
                           ),
                           style: TextStyle(color: Colors.white),
                         ),
@@ -137,20 +218,24 @@ class HomePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => GamePage()),
-                      );
-                    },
-                    child: Text(
-                      'Entrar!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontFamily: 'Gotham',
-                      ),
-                    ),
+                    onPressed: _isLoading ? null : _joinRoom,
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Entrar!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontFamily: 'Gotham',
+                            ),
+                          ),
                   ),
                 ],
               ),

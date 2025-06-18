@@ -40,6 +40,7 @@ class CreateRoomResponse {
 
 @JsonSerializable()
 class JoinRoomRequest {
+  @JsonKey(name: 'player_name')
   final String playerName;
 
   JoinRoomRequest({

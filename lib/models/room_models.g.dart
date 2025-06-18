@@ -26,18 +26,18 @@ CreateRoomResponse _$CreateRoomResponseFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$CreateRoomResponseToJson(CreateRoomResponse instance) =>
     <String, dynamic>{
-      'roomId': instance.roomId,
-      'playerId': instance.playerId,
+      'room_id': instance.roomId,
+      'player_id': instance.playerId,
     };
 
 JoinRoomRequest _$JoinRoomRequestFromJson(Map<String, dynamic> json) =>
     JoinRoomRequest(
-      playerName: json['playerName'] as String,
+      playerName: json['player_name'] as String,
     );
 
 Map<String, dynamic> _$JoinRoomRequestToJson(JoinRoomRequest instance) =>
     <String, dynamic>{
-      'playerName': instance.playerName,
+      'player_name': instance.playerName,
     };
 
 JoinRoomResponse _$JoinRoomResponseFromJson(Map<String, dynamic> json) =>

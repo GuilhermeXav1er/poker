@@ -1,13 +1,32 @@
 import 'package:flutter/material.dart';
 
 class GamePage extends StatefulWidget {
-  const GamePage({super.key});
+  final String? roomId;
+  final String? playerId;
+  final String? playerName;
+
+  const GamePage({
+    super.key,
+    this.roomId,
+    this.playerId,
+    this.playerName,
+  });
 
   @override
   State<GamePage> createState() => _GamePageState();
 }
 
 class _GamePageState extends State<GamePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Log the room information for debugging
+    print('GamePage initialized with:');
+    print('Room ID: ${widget.roomId}');
+    print('Player ID: ${widget.playerId}');
+    print('Player Name: ${widget.playerName}');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
