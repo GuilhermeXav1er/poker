@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poker/screens/create_room_page.dart';
 import 'package:poker/screens/game_page.dart';
+import 'package:poker/screens/lobby_page.dart';
 import '../services/room_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -43,9 +44,10 @@ class _HomePageState extends State<HomePage> {
       print('Joining room with code: ${_roomCodeController.text}');
       print('Username: ${_usernameController.text}');
       
+      final playerName = _usernameController.text.trim();
       final response = await _roomService.joinRoom(
         roomId: _roomCodeController.text.trim(),
-        playerName: _usernameController.text.trim(),
+        playerName: playerName,
       );
 
       print('Joined room successfully!');
@@ -55,7 +57,8 @@ class _HomePageState extends State<HomePage> {
       
       if (response.success) {
         // Navigate to game page with room information
-        Navigator.push(
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyPage(roomCode: _roomCodeController.text.trim(), players: [playerName], onStart: () {})));
+        /* Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => GamePage(
@@ -64,7 +67,7 @@ class _HomePageState extends State<HomePage> {
               playerName: _usernameController.text.trim(),
             ),
           ),
-        );
+        ); */
       } else {
         print('Failed to join room: ${response.message}');
         // You could show a snackbar or dialog here to inform the user

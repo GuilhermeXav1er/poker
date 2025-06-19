@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/room_service.dart';
+import 'lobby_page.dart';
 
 class CreateRoomPage extends StatefulWidget {
   const CreateRoomPage({super.key});
@@ -49,15 +50,17 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
     try {
       print('Creating room with creator: ${_creatorNameController.text}');
       
+      final playerName = _creatorNameController.text.trim();
       final response = await _roomService.createRoom(
-        creatorName: _creatorNameController.text.trim(),
+        creatorName: playerName,
         maxPlayers: maxPlayers,
       );
 
       print('Room created successfully!');
       print('Room ID: ${response.roomId}');
       print('Player ID: ${response.playerId}');
-      
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyPage(roomCode: response.roomId, players: [playerName], onStart: () {})));
+
       // Get WebSocket URL for real-time communication
       final wsUrl = _roomService.getWebSocketUrl(response.roomId);
       print('WebSocket URL: $wsUrl');
