@@ -59,7 +59,11 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
       print('Room created successfully!');
       print('Room ID: ${response.roomId}');
       print('Player ID: ${response.playerId}');
-      Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyPage(roomCode: response.roomId, players: [playerName], onStart: () {})));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyPage(
+        roomCode: response.roomId, 
+        players: [playerName], 
+        playerId: response.playerId,
+      )));
 
       // Get WebSocket URL for real-time communication
       final wsUrl = _roomService.getWebSocketUrl(response.roomId);

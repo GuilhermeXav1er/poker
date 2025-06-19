@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
       
       if (response.success) {
         // Navigate to game page with room information
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyPage(roomCode: _roomCodeController.text.trim(), players: [playerName], onStart: () {})));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyPage(roomCode: _roomCodeController.text.trim(), players: [playerName], playerId: response.playerId)));
         /* Navigator.push(
           context,
           MaterialPageRoute(

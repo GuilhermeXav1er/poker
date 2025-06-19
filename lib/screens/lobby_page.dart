@@ -1,16 +1,71 @@
 import 'package:flutter/material.dart';
+import '../services/room_service.dart';
+import 'game_page.dart';
 
-class LobbyPage extends StatelessWidget {
+class LobbyPage extends StatefulWidget {
   final String roomCode;
   final List<String> players;
-  final VoidCallback? onStart;
+  final String? playerId; // Adicionando playerId para identificar o criador
 
   const LobbyPage({
     super.key,
     required this.roomCode,
     required this.players,
-    this.onStart,
+    this.playerId,
   });
+
+  @override
+  State<LobbyPage> createState() => _LobbyPageState();
+}
+
+class _LobbyPageState extends State<LobbyPage> {
+  final RoomService _roomService = RoomService();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _roomService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startGame() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('Starting game in room: ${widget.roomCode}');
+      
+      await _roomService.startGame(widget.roomCode);
+
+      print('Game started successfully!');
+      
+      // Navegar para a página do jogo
+      Navigator.pushReplacement(
+        context, 
+        MaterialPageRoute(
+          builder: (context) => GamePage(
+            roomId: widget.roomCode,
+            playerId: widget.playerId ?? '', //TODO: não sei se precisa desse playerId mesmo, pq não sao todos usuarios que iniciam o jogo
+          ),
+        ),
+      );
+      
+    } catch (e) {
+      print('Error starting game: $e');
+      // Mostrar erro para o usuário
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao iniciar o jogo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +151,9 @@ class LobbyPage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              for (int i = 0; i < players.length; i++)
+                              for (int i = 0; i < widget.players.length; i++)
                                 Text(
-                                  '${i + 1}. ${players[i]}',
+                                  '${i + 1}. ${widget.players[i]}',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     color: Colors.black,
@@ -113,7 +168,7 @@ class LobbyPage extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0, left: 24.0),
                         child: Text(
-                          roomCode,
+                          widget.roomCode,
                           style: const TextStyle(
                             fontSize: 18,
                             color: Colors.black,
@@ -135,15 +190,24 @@ class LobbyPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      onPressed: onStart,
-                      child: const Text(
-                        'Iniciar!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontFamily: 'Gotham',
-                        ),
-                      ),
+                      onPressed: _isLoading ? null : _startGame,
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Iniciar!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontFamily: 'Gotham',
+                              ),
+                            ),
                     ),
                   ),
                 ],
