@@ -96,11 +96,11 @@ class RoomRepository {
   /// Returns the WebSocket URL as a string
   String getWebSocketUrl(String roomId) {
     final url = ApiConfig.roomWebSocket.replaceAll('{roomId}', roomId);
-    return 'ws://localhost:3000$url';
+    return '${ApiConfig.webSocketBaseUrl}$url';
   }
 
   /// Disposes the HTTP client
   void dispose() {
     _httpClient.close();
   }
-} 
+}

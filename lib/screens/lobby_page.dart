@@ -23,7 +23,19 @@ class _LobbyPageState extends State<LobbyPage> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    // Connect to WebSocket when entering the lobby
+    if (widget.playerId != null) {
+      _roomService.connectToWebSocket(widget.roomCode, widget.playerId!);
+    }
+  }
+
+  @override
   void dispose() {
+    // Disconnect from WebSocket when leaving the lobby
+    _roomService.disconnectWebSocket();
     _roomService.dispose();
     super.dispose();
   }
@@ -218,4 +230,4 @@ class _LobbyPageState extends State<LobbyPage> {
       ),
     );
   }
-} 
+}

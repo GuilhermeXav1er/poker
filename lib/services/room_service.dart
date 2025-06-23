@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
 import '../models/room_models.dart';
 import '../repositories/room_repository.dart';
 
@@ -6,6 +9,8 @@ class RoomService {
 
   RoomService({RoomRepository? repository}) 
       : _repository = repository ?? RoomRepository();
+
+  WebSocketChannel? _channel;
 
   /// Creates a new poker room with the given parameters
   /// 
@@ -105,8 +110,46 @@ class RoomService {
            trimmedName.length <= 20;
   }
 
+  /// Connects to the WebSocket for a specific room
+  void connectToWebSocket(String roomId, String playerId) {
+    final url = _repository.getWebSocketUrl(roomId);
+    _channel = WebSocketChannel.connect(Uri.parse(url));
+
+    // Send join message
+    final joinMessage = jsonEncode({
+      "message_type": "join",
+      "data": {"player_id": playerId}
+    });
+    _channel?.sink.add(joinMessage);
+
+    // Listen to WebSocket messages
+    _channel?.stream.listen((message) {
+      final decodedMessage = jsonDecode(message);
+      switch (decodedMessage['type']) {
+        case 'room_state':
+          print('Room state: ${decodedMessage['data']}');
+          break;
+        case 'game_started':
+          print('Game started!');
+          break;
+        default:
+          print('Unknown message: $decodedMessage');
+      }
+    }, onError: (error) {
+      print('WebSocket error: $error');
+    }, onDone: () {
+      print('WebSocket connection closed');
+    });
+  }
+
+  /// Disconnects from the WebSocket
+  void disconnectWebSocket() {
+    _channel?.sink.close();
+    _channel = null;
+  }
+
   /// Disposes the service and its repository
   void dispose() {
     _repository.dispose();
   }
-} 
+}

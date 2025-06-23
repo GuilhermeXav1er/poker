@@ -67,7 +67,7 @@ POST /room/{room_id}/start
 
 ### WebSocket
 ```
-ws://localhost:3000/room/{room_id}/ws
+https://poker-api-c5cz.onrender.com/room/{room_id}/ws
 ```
 
 ## Mensagens WebSocket
@@ -195,7 +195,7 @@ const response = await fetch('/room', {
 const { room_id, player_id } = await response.json();
 
 // Conectar WebSocket
-const ws = new WebSocket(`ws://localhost:3000/room/${room_id}/ws`);
+const ws = new WebSocket(`https://poker-api-c5cz.onrender.com/room/${room_id}/ws`);
 
 ws.onopen = () => {
     // Entrar na sala

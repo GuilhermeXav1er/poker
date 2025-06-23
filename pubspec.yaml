@@ -40,6 +40,9 @@ dependencies:
   
   # JSON serialization
   json_annotation: ^4.8.1
+  
+  # WebSocket support
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
