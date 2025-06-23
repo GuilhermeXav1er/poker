@@ -41,9 +41,9 @@ class RoomService {
       maxPlayers: maxPlayers,
     );
 
-    print("teste");
+    final response = await _repository.createRoom(request);
 
-    return await _repository.createRoom(request);
+    return response;
   }
 
   /// Joins an existing poker room
@@ -133,6 +133,7 @@ class RoomService {
       switch (decodedMessage['type']) {
         case 'room_state':
           print('Room state: ${decodedMessage['data']}');
+          _handlePlayerJoined(decodedMessage);
           break;
         case 'game_started':
           print('Game started!');
