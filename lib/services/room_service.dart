@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:async';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
 import '../models/room_models.dart';
 import '../repositories/room_repository.dart';
 
@@ -6,6 +10,12 @@ class RoomService {
 
   RoomService({RoomRepository? repository}) 
       : _repository = repository ?? RoomRepository();
+
+  WebSocketChannel? _channel;
+  final StreamController<Map<String, dynamic>> _stateController = StreamController.broadcast();
+
+  /// Stream that emits room state updates
+  Stream<Map<String, dynamic>> get stateStream => _stateController.stream;
 
   /// Creates a new poker room with the given parameters
   /// 
@@ -31,9 +41,9 @@ class RoomService {
       maxPlayers: maxPlayers,
     );
 
-    print("teste");
+    final response = await _repository.createRoom(request);
 
-    return await _repository.createRoom(request);
+    return response;
   }
 
   /// Joins an existing poker room
@@ -105,8 +115,60 @@ class RoomService {
            trimmedName.length <= 20;
   }
 
+  /// Connects to the WebSocket for a specific room
+  void connectToWebSocket(String roomId, String playerId) {
+    final url = _repository.getWebSocketUrl(roomId);
+    _channel = WebSocketChannel.connect(Uri.parse(url));
+
+    // Send join message
+    final joinMessage = jsonEncode({
+      "message_type": "join",
+      "data": {"player_id": playerId}
+    });
+    _channel?.sink.add(joinMessage);
+
+    // Listen to WebSocket messages
+    _channel?.stream.listen((message) {
+      final decodedMessage = jsonDecode(message);
+      switch (decodedMessage['type']) {
+        case 'room_state':
+          print('Room state: ${decodedMessage['data']}');
+          _handlePlayerJoined(decodedMessage);
+          break;
+        case 'game_started':
+          print('Game started!');
+          break;
+        case 'player_joined':
+          print('Player joined: $decodedMessage');
+          _handlePlayerJoined(decodedMessage);
+          break;
+        default:
+          print('Unknown message: $decodedMessage');
+      }
+    }, onError: (error) {
+      print('WebSocket error: $error');
+    }, onDone: () {
+      print('WebSocket connection closed');
+    });
+  }
+
+  void _handlePlayerJoined(Map<String, dynamic> data) {
+    final players = List<Map<String, dynamic>>.from(data['data']['players']);
+    final updatedState = {
+      'players': players.map((player) => player['name']).toList(),
+    };
+    _stateController.add(updatedState);
+  }
+
+  /// Disconnects from the WebSocket
+  void disconnectWebSocket() {
+    _channel?.sink.close();
+    _channel = null;
+  }
+
   /// Disposes the service and its repository
   void dispose() {
     _repository.dispose();
+    _stateController.close();
   }
-} 
+}

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+import '../services/room_service.dart';
 
 class GamePage extends StatefulWidget {
   final String? roomId;
@@ -17,6 +20,8 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> {
+  final RoomService _roomService = RoomService();
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +30,18 @@ class _GamePageState extends State<GamePage> {
     print('Room ID: ${widget.roomId}');
     print('Player ID: ${widget.playerId}');
     print('Player Name: ${widget.playerName}');
+
+    // Connect to WebSocket when entering the game
+    if (widget.roomId != null && widget.playerId != null) {
+      _roomService.connectToWebSocket(widget.roomId!, widget.playerId!);
+    }
+  }
+
+  @override
+  void dispose() {
+    // Disconnect from WebSocket when leaving the game
+    _roomService.disconnectWebSocket();
+    super.dispose();
   }
 
   @override

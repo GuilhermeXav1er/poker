@@ -1,5 +1,6 @@
 class ApiConfig {
   static const String baseUrl = 'https://poker-api-c5cz.onrender.com';
+  static const String webSocketBaseUrl = 'wss://poker-api-c5cz.onrender.com';
   
   // Room endpoints
   static const String createRoom = '/room';
@@ -14,4 +15,4 @@ class ApiConfig {
   
   // Timeout duration
   static const Duration timeout = Duration(seconds: 30);
-} 
+}

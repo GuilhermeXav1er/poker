@@ -17,7 +17,7 @@ class RoomRepository {
   /// Throws [Exception] if the request fails
   Future<CreateRoomResponse> createRoom(CreateRoomRequest request) async {
     try {
-      print("teste2");
+      print(request.toJson());
       final response = await _httpClient
           .post(
             Uri.parse('${ApiConfig.baseUrl}${ApiConfig.createRoom}'),
@@ -96,11 +96,11 @@ class RoomRepository {
   /// Returns the WebSocket URL as a string
   String getWebSocketUrl(String roomId) {
     final url = ApiConfig.roomWebSocket.replaceAll('{roomId}', roomId);
-    return 'ws://localhost:3000$url';
+    return '${ApiConfig.webSocketBaseUrl}$url';
   }
 
   /// Disposes the HTTP client
   void dispose() {
     _httpClient.close();
   }
-} 
+}

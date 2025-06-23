@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../services/room_service.dart';
 import 'game_page.dart';
 
@@ -21,9 +22,33 @@ class LobbyPage extends StatefulWidget {
 class _LobbyPageState extends State<LobbyPage> {
   final RoomService _roomService = RoomService();
   bool _isLoading = false;
+  late StreamSubscription _stateSubscription;
+  List<String> _playerNames = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Connect to WebSocket when entering the lobby
+    if (widget.playerId != null) {
+      _roomService.connectToWebSocket(widget.roomCode, widget.playerId!);
+    }
+
+    // Listen to state changes
+    _stateSubscription = _roomService.stateStream.listen((state) {
+      if (state.containsKey('players')) {
+        setState(() {
+          _playerNames = List<String>.from(state['players']);
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
+    // Disconnect from WebSocket and cancel subscription when leaving the lobby
+    _stateSubscription.cancel();
+    _roomService.disconnectWebSocket();
     _roomService.dispose();
     super.dispose();
   }
@@ -151,9 +176,9 @@ class _LobbyPageState extends State<LobbyPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              for (int i = 0; i < widget.players.length; i++)
+                              for (int i = 0; i < _playerNames.length; i++)
                                 Text(
-                                  '${i + 1}. ${widget.players[i]}',
+                                  '${i + 1}. ${_playerNames[i]}',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     color: Colors.black,
@@ -218,4 +243,4 @@ class _LobbyPageState extends State<LobbyPage> {
       ),
     );
   }
-} 
+}
