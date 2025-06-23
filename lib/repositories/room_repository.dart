@@ -17,7 +17,7 @@ class RoomRepository {
   /// Throws [Exception] if the request fails
   Future<CreateRoomResponse> createRoom(CreateRoomRequest request) async {
     try {
-      print("teste2");
+      print(request.toJson());
       final response = await _httpClient
           .post(
             Uri.parse('${ApiConfig.baseUrl}${ApiConfig.createRoom}'),
