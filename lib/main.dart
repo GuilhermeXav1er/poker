@@ -12,3 +12,8 @@ void main() {
     home: HomePage(),
   ));
 }
+
+//To enter in the lobbypage, need to pass the params.
+/* runApp(MaterialApp(
+    home: LobbyPage(roomCode: '123456', players: ['Enzo', 'Gabriel', 'Bruno', 'Rafael', 'Guilherme'], onStart: () {}),
+  )); */
