@@ -1,0 +1,15 @@
+{
+  "game": null,
+  "players": [
+    {
+      "chips": 1000,
+      "current_bet": 0,
+      "hand": [],
+      "id": "800b6cee-6b57-4bc2-90fa-3285759723d5",
+      "is_all_in": false,
+      "is_folded": false,
+      "name": "eee"
+    }
+  ],
+  "room_id": "9fa45f9e"
+}

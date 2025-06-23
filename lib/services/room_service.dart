@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../models/room_models.dart';
@@ -11,6 +12,10 @@ class RoomService {
       : _repository = repository ?? RoomRepository();
 
   WebSocketChannel? _channel;
+  final StreamController<Map<String, dynamic>> _stateController = StreamController.broadcast();
+
+  /// Stream that emits room state updates
+  Stream<Map<String, dynamic>> get stateStream => _stateController.stream;
 
   /// Creates a new poker room with the given parameters
   /// 
@@ -132,6 +137,10 @@ class RoomService {
         case 'game_started':
           print('Game started!');
           break;
+        case 'player_joined':
+          print('Player joined: $decodedMessage');
+          _handlePlayerJoined(decodedMessage);
+          break;
         default:
           print('Unknown message: $decodedMessage');
       }
@@ -140,6 +149,14 @@ class RoomService {
     }, onDone: () {
       print('WebSocket connection closed');
     });
+  }
+
+  void _handlePlayerJoined(Map<String, dynamic> data) {
+    final players = List<Map<String, dynamic>>.from(data['data']['players']);
+    final updatedState = {
+      'players': players.map((player) => player['name']).toList(),
+    };
+    _stateController.add(updatedState);
   }
 
   /// Disconnects from the WebSocket
@@ -151,5 +168,6 @@ class RoomService {
   /// Disposes the service and its repository
   void dispose() {
     _repository.dispose();
+    _stateController.close();
   }
 }
