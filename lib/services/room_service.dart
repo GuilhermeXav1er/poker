@@ -188,4 +188,24 @@ class RoomService {
     _repository.dispose();
     _stateController.close();
   }
+
+  /// Envia uma ação do jogador para o servidor via WebSocket
+  void sendGameAction({
+    required String playerId,
+    required dynamic action, // String ou Map
+  }) {
+    if (_channel == null) {
+      print('WebSocket não conectado!');
+      return;
+    }
+    final message = jsonEncode({
+      "message_type": "game_action",
+      "data": {
+        "player_id": playerId,
+        "action": action,
+      }
+    });
+    print('Enviando ação via WebSocket: $message');
+    _channel!.sink.add(message);
+  }
 }

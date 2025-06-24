@@ -448,13 +448,38 @@ class _GamePageState extends State<GamePage> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.grey.shade300,
-          shape: CircleBorder(),
+          shape: const CircleBorder(),
           elevation: 5,
         ),
-        onPressed: () {},
+        onPressed: () async {
+          if (widget.playerId == null) return;
+          switch (text) {
+            case 'Desistir':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Fold');
+              break;
+            case 'Passar':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Check');
+              break;
+            case 'Apostar':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Call');
+              break;
+            case 'Pagar':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Call');
+              break;
+            case 'All-In':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'AllIn');
+              break;
+            case 'Aumentar':
+              final value = await _showRaiseDialog(context);
+              if (value != null && value > 0) {
+                _roomService.sendGameAction(playerId: widget.playerId!, action: {'Raise': value});
+              }
+              break;
+          }
+        },
         child: Text(
           text,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 14,
             fontFamily: 'Gotham',
@@ -463,6 +488,36 @@ class _GamePageState extends State<GamePage> {
           textAlign: TextAlign.center,
         ),
       ),
+    );
+  }
+
+  Future<int?> _showRaiseDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Digite o valor do aumento'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(hintText: 'Valor'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                final value = int.tryParse(controller.text);
+                Navigator.of(context).pop(value);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
