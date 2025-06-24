@@ -144,6 +144,11 @@ class RoomService {
           print('Player joined: \\${decodedMessage}');
           _handlePlayerJoined(decodedMessage);
           break;
+        case 'error':
+          print('Erro recebido do servidor: \\${decodedMessage['data']}');
+          // repassa erro para o stateStream
+          _stateController.add({'error': decodedMessage['data']['message'] ?? 'Erro desconhecido'});
+          break;
         default:
           print('Unknown message: \\${decodedMessage}');
       }

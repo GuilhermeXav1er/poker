@@ -45,6 +45,26 @@ class _GamePageState extends State<GamePage> {
     _stateSubscription = _roomService.stateStream.listen((state) {
       print('DEBUG: state recebido do WebSocket:');
       print(state);
+      if (state.containsKey('error')) {
+        // Exibe dialog de erro
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Erro'),
+              content: Text(state['error'].toString()),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        });
+        // NÃO limpa o estado do jogo!
+        return;
+      }
       setState(() {
         _roomId = state['room_id'] ?? widget.roomId;
         // Se for evento de game, players estão em state['game']['players']
