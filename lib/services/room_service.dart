@@ -129,21 +129,23 @@ class RoomService {
 
     // Listen to WebSocket messages
     _channel?.stream.listen((message) {
+      print('DEBUG: Mensagem recebida do WebSocket:');
+      print(message);
       final decodedMessage = jsonDecode(message);
       switch (decodedMessage['type']) {
         case 'room_state':
-          print('Room state: ${decodedMessage['data']}');
+          print('Room state: \\${decodedMessage['data']}');
           _handlePlayerJoined(decodedMessage);
           break;
         case 'game_started':
           print('Game started!');
           break;
         case 'player_joined':
-          print('Player joined: $decodedMessage');
+          print('Player joined: \\${decodedMessage}');
           _handlePlayerJoined(decodedMessage);
           break;
         default:
-          print('Unknown message: $decodedMessage');
+          print('Unknown message: \\${decodedMessage}');
       }
     }, onError: (error) {
       print('WebSocket error: $error');
@@ -153,11 +155,26 @@ class RoomService {
   }
 
   void _handlePlayerJoined(Map<String, dynamic> data) {
-    final players = List<Map<String, dynamic>>.from(data['data']['players']);
-    final updatedState = {
-      'players': players.map((player) => player['name']).toList(),
-    };
-    _stateController.add(updatedState);
+    // Se vier game, repassa o game e room_id
+    if (data['data'] != null && data['data']['game'] != null) {
+      final game = data['data']['game'];
+      final roomId = data['data']['room_id'];
+      _stateController.add({
+        'game': game,
+        'room_id': roomId,
+      });
+      return;
+    }
+    // Se vier players como lista de nomes (lobby)
+    if (data['data'] != null && data['data']['players'] != null && data['data']['players'] is List) {
+      final players = data['data']['players'];
+      _stateController.add({
+        'players': players,
+      });
+      return;
+    }
+    // fallback
+    _stateController.add({});
   }
 
   /// Disconnects from the WebSocket
