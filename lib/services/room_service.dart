@@ -139,6 +139,11 @@ class RoomService {
           break;
         case 'game_started':
           print('Game started!');
+          _handlePlayerJoined(decodedMessage);
+          break;
+        case 'game_update':
+          print('Game update: \\${decodedMessage['data']}');
+          _handleGameUpdate(decodedMessage);
           break;
         case 'player_joined':
           print('Player joined: \\${decodedMessage}');
@@ -146,7 +151,6 @@ class RoomService {
           break;
         case 'error':
           print('Erro recebido do servidor: \\${decodedMessage['data']}');
-          // repassa erro para o stateStream
           _stateController.add({'error': decodedMessage['data']['message'] ?? 'Erro desconhecido'});
           break;
         default:
@@ -180,6 +184,15 @@ class RoomService {
     }
     // fallback
     _stateController.add({});
+  }
+
+  void _handleGameUpdate(Map<String, dynamic> data) {
+    // Para game_update, o estado do jogo está diretamente em data['data']
+    final game = data['data'];
+    _stateController.add({
+      'game': game,
+      'room_id': null, // pode adicionar se necessário
+    });
   }
 
   /// Disconnects from the WebSocket

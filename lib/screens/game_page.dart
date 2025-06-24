@@ -134,6 +134,31 @@ class _GamePageState extends State<GamePage> {
       backgroundColor: const Color(0xFF18713A),
       body: Stack(
         children: [
+          // Indicador de vez do jogador
+          if (_gameData != null && _gameData!['current_player'] != null)
+            Positioned(
+              top: 30,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _getCurrentPlayerText(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Gotham',
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // Mesa de poker oval central
           Center(
             child: Container(
@@ -539,5 +564,20 @@ class _GamePageState extends State<GamePage> {
         );
       },
     );
+  }
+
+  String _getCurrentPlayerText() {
+    if (_gameData == null || _gameData!['current_player'] == null) return '';
+    final currentId = _gameData!['current_player'];
+    final player = _players.firstWhere(
+      (p) => p['id'] == currentId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (player.isEmpty) return 'Vez de: desconhecido';
+    final name = player['name'] ?? 'desconhecido';
+    if (currentId == widget.playerId) {
+      return 'Sua vez! ($name)';
+    }
+    return 'Vez de: $name';
   }
 }
