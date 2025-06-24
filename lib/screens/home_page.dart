@@ -41,38 +41,34 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      print('Joining room with code: ${_roomCodeController.text}');
-      print('Username: ${_usernameController.text}');
-      
+      print('Joining room with code: \\${_roomCodeController.text}');
+      print('Username: \\${_usernameController.text}');
       final playerName = _usernameController.text.trim();
-      final response = await _roomService.joinRoom(
+      final response = await _roomService.joinRoomAndConnect(
         roomId: _roomCodeController.text.trim(),
         playerName: playerName,
       );
 
       print('Joined room successfully!');
-      print('Success: ${response.success}');
-      print('Message: ${response.message}');
-      print('Player ID: ${response.playerId}');
-      
+      print('Success: \\${response.success}');
+      print('Message: \\${response.message}');
+      print('Player ID: \\${response.playerId}');
+
       if (response.success) {
-        // Navigate to game page with room information
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyPage(roomCode: _roomCodeController.text.trim(), players: [playerName], playerId: response.playerId)));
-        /* Navigator.push(
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => GamePage(
-              roomId: _roomCodeController.text.trim(),
-              playerId: response.playerId ?? '',
-              playerName: _usernameController.text.trim(),
+            builder: (context) => LobbyPage(
+              roomCode: _roomCodeController.text.trim(),
+              players: [playerName],
+              playerId: response.playerId,
             ),
           ),
-        ); */
+        );
       } else {
-        print('Failed to join room: ${response.message}');
+        print('Failed to join room: \\${response.message}');
         // You could show a snackbar or dialog here to inform the user
       }
-      
     } catch (e) {
       print('Error joining room: $e');
       // You could show a snackbar or dialog here to inform the user

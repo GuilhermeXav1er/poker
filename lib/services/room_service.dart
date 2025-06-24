@@ -72,6 +72,19 @@ class RoomService {
     return await _repository.joinRoom(roomId, request);
   }
 
+  /// Faz o fluxo completo de entrar na sala: join + conectar WebSocket + enviar evento join
+  Future<JoinRoomResponse> joinRoomAndConnect({
+    required String roomId,
+    required String playerName,
+  }) async {
+    final joinResponse = await joinRoom(roomId: roomId, playerName: playerName);
+    if (joinResponse.playerId == null) {
+      throw Exception('Não foi possível obter o playerId ao entrar na sala.');
+    }
+    connectToWebSocket(roomId, joinResponse.playerId!);
+    return joinResponse;
+  }
+
   /// Starts a game in the specified room
   /// 
   /// [roomId] - The ID of the room to start the game in

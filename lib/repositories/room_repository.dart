@@ -57,11 +57,15 @@ class RoomRepository {
           )
           .timeout(ApiConfig.timeout);
 
+      print('DEBUG: Status code joinRoom: \\${response.statusCode}');
+      print('DEBUG: Body joinRoom: \\${response.body}');
+
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
+        print('DEBUG: JSON joinRoom: \\${jsonResponse}');
         return JoinRoomResponse.fromJson(jsonResponse);
       } else {
-        throw Exception('Failed to join room: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to join room: \\${response.statusCode} - \\${response.body}');
       }
     } catch (e) {
       throw Exception('Error joining room: $e');

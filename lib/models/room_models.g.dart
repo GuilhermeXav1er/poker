@@ -44,12 +44,12 @@ JoinRoomResponse _$JoinRoomResponseFromJson(Map<String, dynamic> json) =>
     JoinRoomResponse(
       success: json['success'] as bool,
       message: json['message'] as String,
-      playerId: json['playerId'] as String?,
+      playerId: json['player_id'] as String?,
     );
 
 Map<String, dynamic> _$JoinRoomResponseToJson(JoinRoomResponse instance) =>
     <String, dynamic>{
       'success': instance.success,
       'message': instance.message,
-      'playerId': instance.playerId,
+      'player_id': instance.playerId,
     };
