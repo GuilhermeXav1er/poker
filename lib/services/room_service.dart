@@ -149,6 +149,10 @@ class RoomService {
           print('Player joined: \\${decodedMessage}');
           _handlePlayerJoined(decodedMessage);
           break;
+        case 'round_finished':
+          print('Round finished: \\${decodedMessage['data']}');
+          _stateController.add({'round_finished': decodedMessage['data']});
+          break;
         case 'error':
           print('Erro recebido do servidor: \\${decodedMessage['data']}');
           _stateController.add({'error': decodedMessage['data']['message'] ?? 'Erro desconhecido'});

@@ -65,6 +65,39 @@ class _GamePageState extends State<GamePage> {
         // NÃO limpa o estado do jogo!
         return;
       }
+      if (state.containsKey('round_finished')) {
+        final data = state['round_finished'];
+        final winners = data['winners'] as List?;
+        if (winners != null && winners.isNotEmpty) {
+          final winner = winners.first;
+          final winnerName = winner['name'] ?? 'Desconhecido';
+          final handRank = winner['hand_rank'] ?? '';
+          final bestHand = winner['best_hand'] as List?;
+          final bestHandStr = bestHand != null
+              ? bestHand.map((c) => "${c['rank']} de ${c['suit']}").join(', ')
+              : '';
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Rodada finalizada!'),
+                content: Text(
+                  'Vencedor: $winnerName\nMão: $bestHandStr\nJogada: $handRank',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          });
+        }
+        // NÃO chama setState!
+        return;
+      }
       setState(() {
         _roomId = state['room_id'] ?? widget.roomId;
         // Se for evento de game, players estão em state['game']['players']
