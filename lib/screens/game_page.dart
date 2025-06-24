@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -21,62 +22,202 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   final RoomService _roomService = RoomService();
+  late StreamSubscription _stateSubscription;
+
+  // Estado do jogo
+  List<Map<String, dynamic>> _players = [];
+  String? _roomId;
+  Map<String, dynamic>? _gameData;
 
   @override
   void initState() {
     super.initState();
-    // Log the room information for debugging
     print('GamePage initialized with:');
-    print('Room ID: ${widget.roomId}');
-    print('Player ID: ${widget.playerId}');
-    print('Player Name: ${widget.playerName}');
+    print('Room ID: \\${widget.roomId}');
+    print('Player ID: \\${widget.playerId}');
+    print('Player Name: \\${widget.playerName}');
 
-    // Connect to WebSocket when entering the game
     if (widget.roomId != null && widget.playerId != null) {
       _roomService.connectToWebSocket(widget.roomId!, widget.playerId!);
     }
+
+    // Escuta eventos do estado do jogo
+    _stateSubscription = _roomService.stateStream.listen((state) {
+      print('DEBUG: state recebido do WebSocket:');
+      print(state);
+      if (state.containsKey('error')) {
+        // Exibe dialog de erro
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Erro'),
+              content: Text(state['error'].toString()),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        });
+        // NÃO limpa o estado do jogo!
+        return;
+      }
+      if (state.containsKey('round_finished')) {
+        final data = state['round_finished'];
+        final winners = data['winners'] as List?;
+        if (winners != null && winners.isNotEmpty) {
+          final winner = winners.first;
+          final winnerName = winner['name'] ?? 'Desconhecido';
+          final handRank = winner['hand_rank'] ?? '';
+          final bestHand = winner['best_hand'] as List?;
+          final bestHandStr = bestHand != null
+              ? bestHand.map((c) => "${c['rank']} de ${c['suit']}").join(', ')
+              : '';
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Rodada finalizada!'),
+                content: Text(
+                  'Vencedor: $winnerName\nMão: $bestHandStr\nJogada: $handRank',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          });
+        }
+        // NÃO chama setState!
+        return;
+      }
+      setState(() {
+        _roomId = state['room_id'] ?? widget.roomId;
+        // Se for evento de game, players estão em state['game']['players']
+        if (state['game'] != null && state['game'] is Map && state['game']['players'] != null) {
+          final gamePlayers = state['game']['players'];
+          if (gamePlayers is List) {
+            _players = gamePlayers.whereType<Map<String, dynamic>>().toList();
+          } else {
+            _players = [];
+          }
+        } else if (state['players'] != null && state['players'] is List) {
+          // fallback para lista de nomes (lobby)
+          _players = [];
+        } else {
+          _players = [];
+        }
+        _gameData = state['game'] is Map<String, dynamic> ? state['game'] : null;
+        print('DEBUG: _players = \\${_players}');
+        print('DEBUG: _gameData = \\${_gameData}');
+      });
+    });
   }
 
   @override
   void dispose() {
-    // Disconnect from WebSocket when leaving the game
+    _stateSubscription.cancel();
     _roomService.disconnectWebSocket();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    print('DEBUG: _players = \\${_players}');
+    print('DEBUG: widget.playerId = \\${widget.playerId}');
+    // Busca o jogador atual
+    final myPlayer = _players.firstWhere(
+      (p) => p['id'] == widget.playerId,
+      orElse: () => <String, dynamic>{},
+    );
+    print('DEBUG: myPlayer = \\${myPlayer}');
+    // Pot geral
+    final pot = _gameData != null && _gameData!['pot'] != null ? _gameData!['pot'].toString() : '0';
+    // Pot do jogador
+    final myChips = myPlayer['chips']?.toString() ?? '0';
+    // Cartas do jogador
+    final myHand = (myPlayer['hand'] is List) ? myPlayer['hand'] : [];
+    print('DEBUG: myHand = \\${myHand}');
+    // Cartas comunitárias
+    final communityCards = _gameData != null && _gameData!['community_cards'] != null && _gameData!['community_cards'] is List ? List.from(_gameData!['community_cards']) : [];
+    print('DEBUG: communityCards = \\${communityCards}');
+
+    // Se não encontrou o jogador, mostra mensagem amigável
+    if (myPlayer.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF18713A),
+        body: const Center(
+          child: Text(
+            'Aguardando informações do jogador...\nVerifique se você entrou corretamente na sala.',
+            style: TextStyle(color: Colors.white, fontSize: 20),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Color(0xFF18713A), // verde de mesa de poker
+      backgroundColor: const Color(0xFF18713A),
       body: Stack(
         children: [
+          // Indicador de vez do jogador
+          if (_gameData != null && _gameData!['current_player'] != null)
+            Positioned(
+              top: 30,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _getCurrentPlayerText(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Gotham',
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // Mesa de poker oval central
           Center(
             child: Container(
               width: 750,
               height: 300,
               decoration: BoxDecoration(
-                gradient: RadialGradient(
+                gradient: const RadialGradient(
                   center: Alignment.center,
                   radius: 0.8,
                   colors: [
-                    Color(0xFFB85450), // vermelho escuro no centro
-                    Color(0xFF8B4513), // marrom nas bordas
+                    Color(0xFFB85450),
+                    Color(0xFF8B4513),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(200),
-                border: Border.all(color: Color(0xFF654321), width: 8),
+                border: Border.all(color: const Color(0xFF654321), width: 8),
               ),
             ),
           ),
-          
-          // Informações do pote atual (topo esquerdo)
+          // Pot geral
           Positioned(
             top: 10,
             left: 120,
             child: Column(
               children: [
-                Text(
+                const Text(
                   'Pote atual',
                   style: TextStyle(
                     color: Colors.white,
@@ -86,8 +227,8 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
                 Text(
-                  '\$ 600',
-                  style: TextStyle(
+                  '$pot',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontFamily: 'Gotham',
@@ -97,14 +238,13 @@ class _GamePageState extends State<GamePage> {
               ],
             ),
           ),
-          
-          // Informações do seu pote (topo direito)
+          // Pot do jogador
           Positioned(
             top: 10,
             right: 120,
             child: Column(
               children: [
-                Text(
+                const Text(
                   'Seu pote',
                   style: TextStyle(
                     color: Colors.white,
@@ -114,8 +254,8 @@ class _GamePageState extends State<GamePage> {
                   ),
                 ),
                 Text(
-                  '\$ 450',
-                  style: TextStyle(
+                  '$myChips',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontFamily: 'Gotham',
@@ -125,162 +265,45 @@ class _GamePageState extends State<GamePage> {
               ],
             ),
           ),
-          
-          // Jogador Xavier (topo esquerdo da mesa)
-          Positioned(
-            top: 80,
-            left: 80,
-            child: _buildPlayer('Xavier', '\$ 500'),
-          ),
-          
-          // Cartas do Xavier
-          Positioned(
-            top: 70,
-            left: 200,
-            child: Row(
-              children: [
-                _buildCard(isBack: true),
-                SizedBox(width: 5),
-                _buildCard(isBack: true),
-              ],
-            ),
-          ),
-          
-          // Aposta do Xavier
-          Positioned(
-            top: 150,
-            left: 220,
-            child: _buildBet('\$ 10'),
-          ),
-          
-          // Botão dealer (perto do Xavier)
-         /*  Positioned(
-            top: 260,
-            left: 280,
-            child: _buildDealerButton(),
-          ),
-           */
-          // Jogador Enzo (topo direito da mesa)
-          Positioned(
-            top: 80,
-            right: 80,
-            child: _buildPlayer('Enzo', '\$ 350'),
-          ),
-          
-          // Cartas do Enzo
-          Positioned(
-            top: 70,
-            right: 150,
-            child: Row(
-              children: [
-                _buildCard(isBack: true),
-                SizedBox(width: 5),
-                _buildCard(isBack: true),
-              ],
-            ),
-          ),
-          
-          // Jogador Romanhole (esquerda da mesa)
-          Positioned(
-            left: 20,
-            top: 180,
-            child: _buildPlayer('Roman', '\$ 500'),
-          ),
-          
-          // Cartas do Romanhole (chip)
-          Positioned(
-            left: 120,
-            top: 160,
-            child: Column(
-              children: [
-                _buildCard(isBack: true, isChip: true),
-                _buildCard(isBack: true, isChip: true),
-              ],
-            ),
-          ),
-          
-          // Aposta do Romanhole
-          Positioned(
-            left: 185,
-            top: 180,
-            child: _buildBet('\$ 5'),
-          ),
-          
-          // Jogador Bruno (direita da mesa)
-          Positioned(
-            right: 20,
-            top: 180,
-            child: _buildPlayer('Bruno', '\$ 150'),
-          ),
-          
-          // Cartas do Bruno (chip)
-          Positioned(
-            right: 120,
-            top: 160,
-            child: Column(
-              children: [
-                _buildCard(isBack: true, isChip: true),
-                _buildCard(isBack: true, isChip: true),
-              ],
-            ),
-          ),
-          
+          // Renderiza jogadores ao redor da mesa
+          ..._buildPlayersAroundTable(_players, myPlayer),
           // Cartas comunitárias (centro da mesa)
           Positioned(
             top: 160,
             left: 320,
             child: Row(
               children: [
-                _buildCard(isBack: true),
-                SizedBox(width: 8),
-                _buildCard(isBack: true),
-                SizedBox(width: 8),
-                _buildCard(isBack: true),
-                SizedBox(width: 8),
-                _buildCard(isBack: true),
-                SizedBox(width: 8),
-                _buildCard(isBack: true),
+                for (var card in communityCards)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _buildCard(
+                      suit: card['suit'] ?? '',
+                      value: card['rank'] ?? '',
+                      color: _getCardColor(card['suit']),
+                    ),
+                  ),
               ],
             ),
           ),
-          
-          // Botão BTN (centro da mesa)
-          Positioned(
-            top: 260,
-            left: 310,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.yellow,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  'BTN',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
           // Suas cartas (parte inferior)
           Positioned(
             bottom: 10,
             left: MediaQuery.of(context).size.width / 2 - 100,
             child: Row(
               children: [
-                _buildCard(suit: '♠', value: 'J', color: Colors.black, isMyCard: true),
-                SizedBox(width: 10),
-                _buildCard(suit: '♦', value: 'A', color: Colors.red, isMyCard: true),
+                for (var card in myHand)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: _buildCard(
+                      suit: card['suit'] ?? '',
+                      value: card['rank'] ?? '',
+                      color: _getCardColor(card['suit']),
+                      isMyCard: true,
+                    ),
+                  ),
               ],
             ),
           ),
-          
           // Botões de ação (parte inferior)
           Positioned(
             bottom: 30,
@@ -289,7 +312,6 @@ class _GamePageState extends State<GamePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Grupo de botões da esquerda
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -297,10 +319,8 @@ class _GamePageState extends State<GamePage> {
                     _buildActionButton('Passar'),
                     _buildActionButton('Apostar'),
                   ],
-                  
                 ),
-                Spacer(),
-                // Grupo de botões da direita
+                const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -316,14 +336,46 @@ class _GamePageState extends State<GamePage> {
       ),
     );
   }
-  
-  Widget _buildPlayer(String name, String money) {
+
+  // Renderiza os jogadores ao redor da mesa
+  List<Widget> _buildPlayersAroundTable(List<Map<String, dynamic>> players, Map<String, dynamic> myPlayer) {
+    // Exemplo simples: distribui os jogadores em posições fixas (melhore conforme necessário)
+    final positions = [
+      const Offset(80, 80), // topo esquerdo
+      const Offset(80, 300), // esquerda
+      const Offset(600, 80), // topo direito
+      const Offset(600, 300), // direita
+    ];
+    List<Widget> widgets = [];
+    for (int i = 0; i < players.length; i++) {
+      final p = players[i];
+      final pos = positions[i % positions.length];
+      widgets.add(
+        Positioned(
+          left: pos.dx,
+          top: pos.dy,
+          child: _buildPlayer(p['name'] ?? '', '${p['chips'] ?? 0}', isMe: p['id'] == myPlayer['id']),
+        ),
+      );
+      // Aposta do jogador
+      widgets.add(
+        Positioned(
+          left: pos.dx + 60,
+          top: pos.dy + 40,
+          child: _buildBet('${p['current_bet'] ?? 0}'),
+        ),
+      );
+    }
+    return widgets;
+  }
+
+  Widget _buildPlayer(String name, String money, {bool isMe = false}) {
     return Column(
       children: [
         Text(
-          name,
+          name + (isMe ? ' (você)' : ''),
           style: TextStyle(
-            color: Colors.white,
+            color: isMe ? Colors.yellow : Colors.white,
             fontSize: 18,
             fontFamily: 'Gotham',
             fontWeight: FontWeight.bold,
@@ -331,7 +383,7 @@ class _GamePageState extends State<GamePage> {
         ),
         Text(
           money,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 16,
             fontFamily: 'Gotham',
@@ -340,7 +392,13 @@ class _GamePageState extends State<GamePage> {
       ],
     );
   }
-  
+
+  Color _getCardColor(String? suit) {
+    if (suit == null) return Colors.black;
+    if (suit == '♥' || suit == '♦') return Colors.red;
+    return Colors.black;
+  }
+
   Widget _buildCard({bool isBack = false, String? suit, String? value, Color? color, bool isChip = false, bool isMyCard = false}) {
     Widget card = Container(
       width: isMyCard ? 100 : 50,
@@ -468,13 +526,38 @@ class _GamePageState extends State<GamePage> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.grey.shade300,
-          shape: CircleBorder(),
+          shape: const CircleBorder(),
           elevation: 5,
         ),
-        onPressed: () {},
+        onPressed: () async {
+          if (widget.playerId == null) return;
+          switch (text) {
+            case 'Desistir':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Fold');
+              break;
+            case 'Passar':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Check');
+              break;
+            case 'Apostar':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Call');
+              break;
+            case 'Pagar':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'Call');
+              break;
+            case 'All-In':
+              _roomService.sendGameAction(playerId: widget.playerId!, action: 'AllIn');
+              break;
+            case 'Aumentar':
+              final value = await _showRaiseDialog(context);
+              if (value != null && value > 0) {
+                _roomService.sendGameAction(playerId: widget.playerId!, action: {'Raise': value});
+              }
+              break;
+          }
+        },
         child: Text(
           text,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.black,
             fontSize: 14,
             fontFamily: 'Gotham',
@@ -484,5 +567,50 @@ class _GamePageState extends State<GamePage> {
         ),
       ),
     );
+  }
+
+  Future<int?> _showRaiseDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Digite o valor do aumento'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(hintText: 'Valor'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                final value = int.tryParse(controller.text);
+                Navigator.of(context).pop(value);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getCurrentPlayerText() {
+    if (_gameData == null || _gameData!['current_player'] == null) return '';
+    final currentId = _gameData!['current_player'];
+    final player = _players.firstWhere(
+      (p) => p['id'] == currentId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (player.isEmpty) return 'Vez de: desconhecido';
+    final name = player['name'] ?? 'desconhecido';
+    if (currentId == widget.playerId) {
+      return 'Sua vez! ($name)';
+    }
+    return 'Vez de: $name';
   }
 }

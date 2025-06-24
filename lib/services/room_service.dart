@@ -72,6 +72,19 @@ class RoomService {
     return await _repository.joinRoom(roomId, request);
   }
 
+  /// Faz o fluxo completo de entrar na sala: join + conectar WebSocket + enviar evento join
+  Future<JoinRoomResponse> joinRoomAndConnect({
+    required String roomId,
+    required String playerName,
+  }) async {
+    final joinResponse = await joinRoom(roomId: roomId, playerName: playerName);
+    if (joinResponse.playerId == null) {
+      throw Exception('Não foi possível obter o playerId ao entrar na sala.');
+    }
+    connectToWebSocket(roomId, joinResponse.playerId!);
+    return joinResponse;
+  }
+
   /// Starts a game in the specified room
   /// 
   /// [roomId] - The ID of the room to start the game in
@@ -129,21 +142,36 @@ class RoomService {
 
     // Listen to WebSocket messages
     _channel?.stream.listen((message) {
+      print('DEBUG: Mensagem recebida do WebSocket:');
+      print(message);
       final decodedMessage = jsonDecode(message);
       switch (decodedMessage['type']) {
         case 'room_state':
-          print('Room state: ${decodedMessage['data']}');
+          print('Room state: \\${decodedMessage['data']}');
           _handlePlayerJoined(decodedMessage);
           break;
         case 'game_started':
           print('Game started!');
-          break;
-        case 'player_joined':
-          print('Player joined: $decodedMessage');
           _handlePlayerJoined(decodedMessage);
           break;
+        case 'game_update':
+          print('Game update: \\${decodedMessage['data']}');
+          _handleGameUpdate(decodedMessage);
+          break;
+        case 'player_joined':
+          print('Player joined: \\${decodedMessage}');
+          _handlePlayerJoined(decodedMessage);
+          break;
+        case 'round_finished':
+          print('Round finished: \\${decodedMessage['data']}');
+          _stateController.add({'round_finished': decodedMessage['data']});
+          break;
+        case 'error':
+          print('Erro recebido do servidor: \\${decodedMessage['data']}');
+          _stateController.add({'error': decodedMessage['data']['message'] ?? 'Erro desconhecido'});
+          break;
         default:
-          print('Unknown message: $decodedMessage');
+          print('Unknown message: \\${decodedMessage}');
       }
     }, onError: (error) {
       print('WebSocket error: $error');
@@ -153,11 +181,35 @@ class RoomService {
   }
 
   void _handlePlayerJoined(Map<String, dynamic> data) {
-    final players = List<Map<String, dynamic>>.from(data['data']['players']);
-    final updatedState = {
-      'players': players.map((player) => player['name']).toList(),
-    };
-    _stateController.add(updatedState);
+    // Se vier game, repassa o game e room_id
+    if (data['data'] != null && data['data']['game'] != null) {
+      final game = data['data']['game'];
+      final roomId = data['data']['room_id'];
+      _stateController.add({
+        'game': game,
+        'room_id': roomId,
+      });
+      return;
+    }
+    // Se vier players como lista de nomes (lobby)
+    if (data['data'] != null && data['data']['players'] != null && data['data']['players'] is List) {
+      final players = data['data']['players'];
+      _stateController.add({
+        'players': players,
+      });
+      return;
+    }
+    // fallback
+    _stateController.add({});
+  }
+
+  void _handleGameUpdate(Map<String, dynamic> data) {
+    // Para game_update, o estado do jogo está diretamente em data['data']
+    final game = data['data'];
+    _stateController.add({
+      'game': game,
+      'room_id': null, // pode adicionar se necessário
+    });
   }
 
   /// Disconnects from the WebSocket
@@ -170,5 +222,25 @@ class RoomService {
   void dispose() {
     _repository.dispose();
     _stateController.close();
+  }
+
+  /// Envia uma ação do jogador para o servidor via WebSocket
+  void sendGameAction({
+    required String playerId,
+    required dynamic action, // String ou Map
+  }) {
+    if (_channel == null) {
+      print('WebSocket não conectado!');
+      return;
+    }
+    final message = jsonEncode({
+      "message_type": "game_action",
+      "data": {
+        "player_id": playerId,
+        "action": action,
+      }
+    });
+    print('Enviando ação via WebSocket: $message');
+    _channel!.sink.add(message);
   }
 }

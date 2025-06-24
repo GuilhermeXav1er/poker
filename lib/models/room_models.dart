@@ -57,6 +57,7 @@ class JoinRoomRequest {
 class JoinRoomResponse {
   final bool success;
   final String message;
+  @JsonKey(name: 'player_id')
   final String? playerId;
 
   JoinRoomResponse({
@@ -69,4 +70,4 @@ class JoinRoomResponse {
       _$JoinRoomResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$JoinRoomResponseToJson(this);
-} 
+}

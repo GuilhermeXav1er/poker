@@ -37,8 +37,19 @@ class _LobbyPageState extends State<LobbyPage> {
     // Listen to state changes
     _stateSubscription = _roomService.stateStream.listen((state) {
       if (state.containsKey('players')) {
+        final playersRaw = state['players'];
+        List<String> nomes = [];
+        if (playersRaw is List) {
+          for (var p in playersRaw) {
+            if (p is String) {
+              nomes.add(p);
+            } else if (p is Map && p['name'] != null) {
+              nomes.add(p['name'].toString());
+            }
+          }
+        }
         setState(() {
-          _playerNames = List<String>.from(state['players']);
+          _playerNames = nomes;
         });
       }
     });
